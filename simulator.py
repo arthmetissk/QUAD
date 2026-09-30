@@ -132,7 +132,7 @@ def generate_medium(seed: int = SEED) -> dict[str, Any]:
     binned = dose_points.groupby("dose_bin", as_index=False).twfe_sales.mean()
     true_lift = float(amplitude * (1 - np.exp(-true_b * 0.9)))
     return {
-        "data": data, "model": model, "response": response,
+        "data": data, "response": response,
         "fitted_b": fitted_b, "true_b": true_b, "amplitude": amplitude,
         "true_effect": true_lift, "pretrend": pretrend, "pretrend_test": pretrend_test, "binned": binned,
         "wave_launches": wave_launches,

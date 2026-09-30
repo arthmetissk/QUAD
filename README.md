@@ -83,7 +83,7 @@ Without a key the rest of the app works normally, and the assistant page explain
 2. In Render, choose **New → Blueprint** and connect the repository.
 3. Render reads `render.yaml`, installs the pinned requirements, and starts Streamlit on `0.0.0.0` using Render's dynamic `$PORT`.
 
-You can also create a Render **Web Service** manually with build command `pip install -r requirements.txt` and start command `streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true`.
+You can also create a Render **Web Service** manually with build command `pip install -r requirements.txt && python precompute.py` and start command `streamlit run app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true`.
 
 On Render's free plan the service sleeps when idle. Open it a minute before a live demo so the first page load isn't a cold start.
 
@@ -91,6 +91,7 @@ On Render's free plan the service sleeps when idle. Open it a minute before a li
 
 - `app.py`: Streamlit interface, navigation and charts for every page.
 - `design_lab.py`: design dimensions, the measurement recommendation engine, partner-maturity mapping, and the design-matched simulator and estimators.
+- `precompute.py`: runs every simulation once at build time and saves the results to `precomputed.pkl` (git-ignored), so pages load without running regressions. The file is fingerprinted against the simulation code; if it's missing or stale, the app computes on demand.
 - `simulator.py`: fixed-seed generators and analyses for the two appendix methods.
 - `assistant.py`: the "Ask the lab" assistant: knowledge brief built from the app's data, and streaming calls to Claude.
 - `targeting_signals.py`: a synthetic 40,000-basket transaction log and the targeting signals mined from it (CDI/BDI, basket affinity, hour × category index, brand switching).

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import pickle
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -23,6 +24,7 @@ from assistant import SUGGESTED_QUESTIONS, api_key_configured, context_note, kno
 from design_lab import TARGETING
 from illustrations import PLACEMENT_COLORS, measurement_flow, rollout_patterns, store_map, to_img
 from simulator import SEED, load_demo_data
+from precompute import OUTPUT as PRECOMPUTED_PATH, source_fingerprint
 from targeting_signals import ADVERTISED_CATEGORY, load_signals
 
 st.set_page_config(
@@ -118,15 +120,27 @@ st.markdown(
 STATUS_LABEL = {"valid": "Valid design", "caution": "Valid with caveats", "invalid": "Needs a comparison group"}
 
 
+@st.cache_resource(show_spinner=False)
+def precomputed() -> dict:
+    """Results written by precompute.py at build time. Empty (compute on demand) if the file is
+    missing, unreadable, or was built from different simulation code."""
+    try:
+        payload = pickle.loads(PRECOMPUTED_PATH.read_bytes())
+    except (OSError, pickle.UnpicklingError, EOFError, AttributeError, ImportError):
+        return {}
+    return payload if payload.get("fingerprint") == source_fingerprint() and payload.get("seed") == SEED else {}
+
+
 @st.cache_data(show_spinner="Generating reproducible synthetic campaign data…")
 def demo_data():
-    return load_demo_data(SEED)
+    return precomputed().get("demo") or load_demo_data(SEED)
 
 
 @st.cache_data(show_spinner="Simulating data for this design and running the recommended method…")
 def run_design(placement: str, targeting: str, offer: str, rollout: str):
     design = Design(placement, targeting, offer, rollout)
-    return recommend(design), simulate(design, SEED)
+    result = precomputed().get("designs", {}).get((placement, targeting, offer, rollout))
+    return recommend(design), result if result is not None else simulate(design, SEED)
 
 
 use_simulator(lambda design: run_design(*vars(design).values())[1])  # the assistant reuses the app's cached simulations
@@ -518,7 +532,7 @@ TARGETING_PLAYBOOK = {
 
 @st.cache_data(show_spinner="Building the synthetic transaction log…")
 def signals_data():
-    return load_signals(SEED)
+    return precomputed().get("signals") or load_signals(SEED)
 
 
 def heatmap(frame, title: str, midpoint: float, fmt_text: str, x_title: str, y_title: str, height: int = 430, diverging: bool = True):
