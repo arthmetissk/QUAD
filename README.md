@@ -43,6 +43,8 @@ The four dimensions can be fine-tuned under "Advanced":
 
 Partner references cite public announcements.
 
+**5 · Ask the lab.** A chat assistant powered by Claude (`claude-opus-5`, via the Anthropic Python SDK). It answers questions about the lab's pages, goals, objections, retailer stages and simulated results, and knows which design is loaded in the builder. It's grounded in a brief generated from the app's own data (`assistant.py`), streams its answers, caches the brief with prompt caching, and has server-side refusal fallbacks enabled.
+
 **Appendix.**
 
 - Store map and shopper signals: placements, transaction-data targeting signals, offers and rollout patterns.
@@ -66,6 +68,15 @@ streamlit run app.py
 
 Then open the local URL printed by Streamlit (usually `http://localhost:8501`).
 
+## Anthropic API key (for "Ask the lab")
+
+The assistant reads `ANTHROPIC_API_KEY` from the environment. Never commit the key: `.env` is git-ignored.
+
+- **Locally:** create a `.env` file next to `app.py` containing `ANTHROPIC_API_KEY=<your key>`. The app loads it on startup.
+- **On Render:** open the service → **Environment** → add `ANTHROPIC_API_KEY`. The Blueprint declares it with `sync: false`, so Render asks for the value instead of reading it from the repo.
+
+Without a key the rest of the app works normally, and the assistant page explains how to add one.
+
 ## Deploy to Render
 
 1. Push this repository to GitHub.
@@ -81,6 +92,7 @@ On Render's free plan the service sleeps when idle. Open it a minute before a li
 - `app.py`: Streamlit interface, navigation and charts for every page.
 - `design_lab.py`: design dimensions, the measurement recommendation engine, partner-maturity mapping, and the design-matched simulator and estimators.
 - `simulator.py`: fixed-seed generators and analyses for the two appendix methods.
+- `assistant.py`: the "Ask the lab" assistant: knowledge brief built from the app's data, and streaming calls to Claude.
 - `targeting_signals.py`: a synthetic 40,000-basket transaction log and the targeting signals mined from it (CDI/BDI, basket affinity, hour × category index, brand switching).
 - `illustrations.py`: inline SVG illustrations for the opening page and the appendix: measurement flow, store floor plan with screen placements, and rollout patterns. There are no image files to host.
 - `requirements.txt`: pinned runtime dependencies.

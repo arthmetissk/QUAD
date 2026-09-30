@@ -1,5 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+# Local development: read ANTHROPIC_API_KEY from the .env next to this file (never committed).
+# On Render there is no .env; the key comes from the service's environment settings.
+load_dotenv(Path(__file__).with_name(".env"))
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
@@ -11,6 +19,7 @@ from design_lab import (
     DIMENSION_TITLES, DIMENSIONS, GOALS, MATURITY, PRESETS, SECONDARY, TARGET_DAYPART, WEAK_DESIGNS,
     Design, maturity_required, recommend, simulate,
 )
+from assistant import SUGGESTED_QUESTIONS, api_key_configured, context_note, knowledge_base, stream_reply, use_simulator
 from design_lab import TARGETING
 from illustrations import PLACEMENT_COLORS, measurement_flow, rollout_patterns, store_map, to_img
 from simulator import SEED, load_demo_data
@@ -120,6 +129,9 @@ def run_design(placement: str, targeting: str, offer: str, rollout: str):
     return recommend(design), simulate(design, SEED)
 
 
+use_simulator(lambda design: run_design(*vars(design).values())[1])  # the assistant reuses the app's cached simulations
+
+
 def money(value: float) -> str:
     return f"{value:,.1f}"
 
@@ -197,7 +209,7 @@ def bullet_panel(title: str, items: list[str], css: str = "") -> str:
 
 # ---------- Session state & navigation ----------
 
-PAGES = ["Why proof matters", "Design the test", "Answer the brand's questions", "Scale with the retailer",
+PAGES = ["Why proof matters", "Design the test", "Answer the brand's questions", "Scale with the retailer", "Ask the lab",
          "Appendix · Store map & signals", "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
 
 
@@ -224,6 +236,8 @@ with st.sidebar:
     st.markdown("<div style='font-family:Manrope;font-weight:800;font-size:1.08rem;color:white'>◉ PROOF AT THE SHELF</div>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:.77rem;margin-top:.15rem'>A measurement design lab for in-store retail media</p>", unsafe_allow_html=True)
     page = st.radio("Explore the framework", PAGES, key="page", label_visibility="collapsed")
+    if page != "Ask the lab":
+        st.session_state.last_content_page = page  # gives the assistant context on what the user was looking at
     # Streamlit keeps the scroll position across reruns, so a newly selected page would open
     # part-way down. Scroll the main pane back to the top whenever the page changes.
     if st.session_state.get("last_page") != page:
@@ -871,6 +885,44 @@ def page_objections():
     st.markdown("<div class='insight'><b>The common thread:</b> every answer is a comparison group: other stores, not-yet-launched stores, the neighboring product, other dayparts. Agreeing on that comparison at proposal stage is what makes the readout land at renewal.</div>", unsafe_allow_html=True)
 
 
+def ask(question: str):
+    st.session_state.pending_question = question
+
+
+def clear_chat():
+    st.session_state.chat = []
+
+
+def page_assistant():
+    header("ASK THE LAB", "Ask anything about the lab", "A Claude-powered assistant that knows every page, brand goal, objection, retailer stage and simulated result in the lab. It answers in business language and points you to where to look.")
+    if not api_key_configured():
+        st.info("The assistant needs an Anthropic API key. On Render, add ANTHROPIC_API_KEY under the service's Environment settings; locally, put it in a .env file. Then reload the page.", icon="🔑")
+        return
+    with st.spinner("Preparing the assistant's brief on the lab…"):
+        knowledge_base()
+    history = st.session_state.setdefault("chat", [])
+    if not history:
+        st.markdown("<div class='eyebrow' style='margin-top:.4rem'>Try a question</div>", unsafe_allow_html=True)
+        for start in (0, 2):
+            button_row([(question, f"suggest_{index}", ask, (question,)) for index, question in enumerate(SUGGESTED_QUESTIONS[start:start + 2], start)])
+    for message in history:
+        if message["role"] in ("user", "assistant"):
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
+    question = st.chat_input("Ask about designs, measurement, brand objections or retailer stages") or st.session_state.pop("pending_question", None)
+    if question:
+        history.append({"role": "user", "content": question})
+        history.append(context_note(st.session_state.get("last_content_page", "Why proof matters"), Design(**st.session_state.design)))
+        with st.chat_message("user"):
+            st.markdown(question)
+        with st.chat_message("assistant"):
+            reply = st.write_stream(stream_reply(history))
+        history.append({"role": "assistant", "content": reply if isinstance(reply, str) else "".join(map(str, reply))})
+    if history:
+        st.button("Clear conversation", on_click=clear_chat)
+    st.markdown("<p class='small-note' style='margin-top:1rem'>Answers come from Claude (claude-opus-5), grounded in this lab's content. All numbers are from the lab's simulation.</p>", unsafe_allow_html=True)
+
+
 def page_maturity():
     header("STEP 4 · SCALE WITH THE RETAILER", "A measurement roadmap, from pilot to fully instrumented network", "In-store networks deploy modularly, from a single-region pilot to a fully instrumented rollout with aisle-level traffic and basket data. The right proof plan is the most rigorous one the retailer's data can support today.")
     audience("Each campaign's measurement makes the case for the next data investment: timestamps, play logs, aisle traffic.",
@@ -996,6 +1048,8 @@ elif page == "Answer the brand's questions":
     page_objections()
 elif page == "Scale with the retailer":
     page_maturity()
+elif page == "Ask the lab":
+    page_assistant()
 elif page == "Appendix · Holdout method":
     page_easy(demo_data())
 elif page == "Appendix · Waves & dose method":

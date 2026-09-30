@@ -9,3 +9,5 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.11
+      - key: ANTHROPIC_API_KEY
+        sync: false  # set the value in the Render dashboard; never commit it
