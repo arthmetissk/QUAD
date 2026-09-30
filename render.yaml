@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: storefront-signals
+    name: proof-at-the-shelf
     runtime: python
     plan: free
     region: oregon
