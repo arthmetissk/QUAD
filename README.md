@@ -43,7 +43,7 @@ The four dimensions can be fine-tuned under "Advanced":
 
 Partner references cite public announcements.
 
-**5 · Ask the lab.** A chat assistant powered by Claude (`claude-opus-5`, via the Anthropic Python SDK). It answers questions about the lab's pages, goals, objections, retailer stages and simulated results, and knows which design is loaded in the builder. It's grounded in a brief generated from the app's own data (`assistant.py`), streams its answers, caches the brief with prompt caching, and has server-side refusal fallbacks enabled.
+**Ask the lab (bottom-right corner of every page).** A chat panel powered by Claude (`claude-opus-5`, via the Anthropic Python SDK). It answers questions about the lab's pages, goals, objections, retailer stages and simulated results, and knows which page you're on and which design is loaded in the builder. It stays open, with the conversation kept, as you move between pages. It's grounded in a brief generated from the app's own data (`assistant.py`), streams its answers, caches the brief with prompt caching, and has server-side refusal fallbacks enabled.
 
 **Appendix.**
 
@@ -75,7 +75,7 @@ The assistant reads `ANTHROPIC_API_KEY` from the environment. Never commit the k
 - **Locally:** create a `.env` file next to `app.py` containing `ANTHROPIC_API_KEY=<your key>`. The app loads it on startup.
 - **On Render:** open the service → **Environment** → add `ANTHROPIC_API_KEY`. The Blueprint declares it with `sync: false`, so Render asks for the value instead of reading it from the repo.
 
-Without a key the rest of the app works normally, and the assistant page explains how to add one.
+Without a key the rest of the app works normally, and the chat panel explains how to add one.
 
 ## Deploy to Render
 

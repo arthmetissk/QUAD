@@ -104,6 +104,19 @@ st.markdown(
     .grid.stages > * { display:grid !important; grid-template-rows:subgrid; grid-row:span 6; row-gap:.55rem; align-content:start; }
     .grid.stages > * > * { margin:0 !important; }
     @media (max-width: 640px) { .grid.grid-2, .grid.grid-3, .grid.grid-4, .grid.grid-5 { grid-template-columns:minmax(0, 1fr); grid-auto-rows:auto; } }
+    /* "Ask the lab": a toggle button and chat panel pinned to the bottom-right corner on every page. */
+    .st-key-chat_fab { position:fixed; right:1.5rem; bottom:1.5rem; left:auto !important; z-index:1001; width:fit-content !important; }
+    .st-key-chat_fab [data-testid="stElementContainer"], .st-key-chat_fab .stButton { width:fit-content !important; }
+    .st-key-chat_fab button { background:#087e8b; color:white !important; border:none; border-radius:999px; padding:.65rem 1.2rem; font-weight:600; box-shadow:0 10px 26px rgba(16,36,58,.28); }
+    .st-key-chat_fab button:hover, .st-key-chat_fab button:focus { background:#066a75; color:white !important; }
+    .st-key-chat_fab button p { color:white !important; }
+    .st-key-chat_panel { position:fixed; right:1.5rem; bottom:5.2rem; z-index:1000; width:430px !important; max-width:calc(100vw - 2rem);
+      max-height:calc(100vh - 7rem); overflow-y:auto; background:white; border:1px solid #e2eaf0; border-radius:16px;
+      box-shadow:0 18px 48px rgba(16,36,58,.22); padding:1rem 1rem .8rem; }
+    /* Streamlit sizes text blocks to the main column with an inline width; make them fit the panel instead. */
+    .st-key-chat_panel [data-testid="stElementContainer"], .st-key-chat_panel [data-testid="stVerticalBlock"],
+    .st-key-chat_panel [data-testid="stMarkdown"] { width:100% !important; max-width:100%; }
+    .chat-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:1.05rem; color:#172b42; }
     .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:.4rem 0 1rem; }
     .chip { background:white; border:1px solid #bfe3dc; color:#0b5f69; border-radius:10px; padding:.45rem .7rem; font-size:.82rem; font-weight:600; }
     .chip span { display:block; font-weight:400; color:#6b8193; font-size:.74rem; }
@@ -223,7 +236,7 @@ def bullet_panel(title: str, items: list[str], css: str = "") -> str:
 
 # ---------- Session state & navigation ----------
 
-PAGES = ["Why proof matters", "Design the test", "Answer the brand's questions", "Scale with the retailer", "Ask the lab",
+PAGES = ["Why proof matters", "Design the test", "Answer the brand's questions", "Scale with the retailer",
          "Appendix · Store map & signals", "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
 
 
@@ -250,8 +263,6 @@ with st.sidebar:
     st.markdown("<div style='font-family:Manrope;font-weight:800;font-size:1.08rem;color:white'>◉ PROOF AT THE SHELF</div>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:.77rem;margin-top:.15rem'>A measurement design lab for in-store retail media</p>", unsafe_allow_html=True)
     page = st.radio("Explore the framework", PAGES, key="page", label_visibility="collapsed")
-    if page != "Ask the lab":
-        st.session_state.last_content_page = page  # gives the assistant context on what the user was looking at
     # Streamlit keeps the scroll position across reruns, so a newly selected page would open
     # part-way down. Scroll the main pane back to the top whenever the page changes.
     if st.session_state.get("last_page") != page:
@@ -907,34 +918,50 @@ def clear_chat():
     st.session_state.chat = []
 
 
-def page_assistant():
-    header("ASK THE LAB", "Ask anything about the lab", "A Claude-powered assistant that knows every page, brand goal, objection, retailer stage and simulated result in the lab. It answers in business language and points you to where to look.")
-    if not api_key_configured():
-        st.info("The assistant needs an Anthropic API key. On Render, add ANTHROPIC_API_KEY under the service's Environment settings; locally, put it in a .env file. Then reload the page.", icon="🔑")
-        return
-    with st.spinner("Preparing the assistant's brief on the lab…"):
-        knowledge_base()
-    history = st.session_state.setdefault("chat", [])
-    if not history:
-        st.markdown("<div class='eyebrow' style='margin-top:.4rem'>Try a question</div>", unsafe_allow_html=True)
-        for start in (0, 2):
-            button_row([(question, f"suggest_{index}", ask, (question,)) for index, question in enumerate(SUGGESTED_QUESTIONS[start:start + 2], start)])
-    for message in history:
-        if message["role"] in ("user", "assistant"):
-            with st.chat_message(message["role"]):
-                st.markdown(message["content"])
-    question = st.chat_input("Ask about designs, measurement, brand objections or retailer stages") or st.session_state.pop("pending_question", None)
-    if question:
-        history.append({"role": "user", "content": question})
-        history.append(context_note(st.session_state.get("last_content_page", "Why proof matters"), Design(**st.session_state.design)))
-        with st.chat_message("user"):
-            st.markdown(question)
-        with st.chat_message("assistant"):
-            reply = st.write_stream(stream_reply(history))
-        history.append({"role": "assistant", "content": reply if isinstance(reply, str) else "".join(map(str, reply))})
-    if history:
-        st.button("Clear conversation", on_click=clear_chat)
-    st.markdown("<p class='small-note' style='margin-top:1rem'>Answers come from Claude (claude-opus-5), grounded in this lab's content. All numbers are from the lab's simulation.</p>", unsafe_allow_html=True)
+def toggle_chat():
+    st.session_state.chat_open = not st.session_state.get("chat_open", False)
+
+
+@st.fragment
+def floating_assistant(page: str):
+    """Chat panel pinned to the bottom-right corner of every page.
+
+    A plain container positioned with CSS (.st-key-chat_panel), with its open state kept in
+    session_state so it stays open across reruns. As a fragment, asking a question reruns only
+    the chat, not the whole page."""
+    is_open = st.session_state.get("chat_open", False)
+    if is_open:
+        with st.container(key="chat_panel"):
+            st.markdown("<div class='chat-title'>Ask the lab</div><p class='small-note' style='margin:0 0 .4rem'>Claude answers questions about any page, goal, objection or result. Numbers come from the lab's simulation.</p>", unsafe_allow_html=True)
+            if not api_key_configured():
+                st.info("The assistant needs an Anthropic API key. On Render, add ANTHROPIC_API_KEY under the service's Environment settings; locally, put it in a .env file. Then reload.", icon="🔑")
+            else:
+                knowledge_base()  # cached after the first build; uses the precomputed simulations
+                history = st.session_state.setdefault("chat", [])
+                messages = st.container(height=360, border=False)
+                with messages:
+                    if not history:
+                        st.markdown("<div class='eyebrow' style='margin-top:.2rem'>Try a question</div>", unsafe_allow_html=True)
+                        for index, suggestion in enumerate(SUGGESTED_QUESTIONS):
+                            st.button(suggestion, key=f"suggest_{index}", on_click=ask, args=(suggestion,), use_container_width=True)
+                    for message in history:
+                        if message["role"] in ("user", "assistant"):
+                            with st.chat_message(message["role"]):
+                                st.markdown(message["content"])
+                question = st.chat_input("Ask a question…", key="assistant_input") or st.session_state.pop("pending_question", None)
+                if question:
+                    history.append({"role": "user", "content": question})
+                    history.append(context_note(page, Design(**st.session_state.design)))
+                    with messages:
+                        with st.chat_message("user"):
+                            st.markdown(question)
+                        with st.chat_message("assistant"):
+                            reply = st.write_stream(stream_reply(history))
+                    history.append({"role": "assistant", "content": reply if isinstance(reply, str) else "".join(map(str, reply))})
+                if history:
+                    st.button("Clear conversation", on_click=clear_chat, key="clear_chat")
+    with st.container(key="chat_fab"):
+        st.button("✕  Close" if is_open else "💬  Ask the lab", on_click=toggle_chat, key="chat_toggle")
 
 
 def page_maturity():
@@ -1062,11 +1089,11 @@ elif page == "Answer the brand's questions":
     page_objections()
 elif page == "Scale with the retailer":
     page_maturity()
-elif page == "Ask the lab":
-    page_assistant()
 elif page == "Appendix · Holdout method":
     page_easy(demo_data())
 elif page == "Appendix · Waves & dose method":
     page_medium(demo_data())
+
+floating_assistant(page)
 
 st.markdown("<div class='footer'>Proof at the Shelf · synthetic data only · fixed-seed reproducibility · statistical results are illustrative, not business guidance.</div>", unsafe_allow_html=True)

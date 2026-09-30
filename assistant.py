@@ -39,7 +39,7 @@ _PAGES = """Pages in the lab (sidebar):
 2. Design the test: start from one of six brand goals, which pre-fills a matched design; shows how it will be proven, what it can't support, analyses it unlocks, and a simulated readout with incremental revenue and iROAS (editable assumptions: stores, weeks, item price, media spend). The four dimensions can be fine-tuned under "Advanced".
 3. Answer the brand's questions: six common brand objections with an answer, a design to propose and a simulated proof point.
 4. Scale with the retailer: a three-stage measurement roadmap.
-5. Ask the lab: this assistant.
+The assistant (you) opens from the 'Ask the lab' button in the bottom-right corner of every page.
 Appendix: Store map & signals (placements, transaction-data targeting signals, offers, rollout patterns), Design guardrails, Holdout method (DiD worked example), Waves & dose method (fixed effects, pre-trend check, dose curve)."""
 
 _PUBLIC_FACTS = """What In-Store Connect does today (from Quad's public materials and partner announcements):
