@@ -1,0 +1,13 @@
+[theme]
+# Force the light theme: the custom styling assumes it, and dark-mode browsers would otherwise get unreadable labels.
+base = "light"
+primaryColor = "#087e8b"
+backgroundColor = "#f5f8fa"
+secondaryBackgroundColor = "#ffffff"
+textColor = "#172b42"
+
+[client]
+toolbarMode = "viewer"
+
+[browser]
+gatherUsageStats = false
