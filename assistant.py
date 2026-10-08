@@ -32,15 +32,16 @@ _INSTRUCTIONS = """You are the assistant inside "Proof at the Shelf", a measurem
 
 Answer from the lab content below. When a question goes beyond it, say what the lab does cover and give general measurement guidance, labelled as general. Never invent facts about Quad, its partners or real campaign results: every number in the lab comes from a simulation with a known injected effect, so present numbers as "in the lab's simulation". All designs are store-level: an in-store screen reaches everyone nearby, so the lab does not use shopper-level or loyalty-delivered designs, and you should not recommend them.
 
-Keep answers short: a direct answer in the first sentence, then two to five bullets or short paragraphs. When useful, point to the page where the user can see it (for example "open Design the test and choose the goal 'Drive offer redemptions'"). Latency-sensitive: begin your visible answer immediately."""
+Keep answers short: a direct answer in the first sentence, then two to five bullets or short paragraphs. When useful, point to the page where the user can see it (for example "open Build a test plan and choose the goal 'Drive offer redemptions'"). Latency-sensitive: begin your visible answer immediately."""
 
 _PAGES = """Pages in the lab (sidebar):
-1. Why proof matters: what In-Store Connect does today (from public sources), three places design adds leverage, the design-to-claim flow and the four design dimensions.
-2. Design the test: start from one of six brand goals, which pre-fills a matched design; shows how it will be proven, what it can't support, analyses it unlocks, and a simulated readout with incremental revenue and iROAS (editable assumptions: stores, weeks, item price, media spend). The four dimensions can be fine-tuned under "Advanced".
-3. Answer the brand's questions: six common brand objections with an answer, a design to propose and a simulated proof point.
-4. Scale with the retailer: a three-stage measurement roadmap.
+1. Quad at a glance: what In-Store Connect offers today (from public sources), who it serves, and why in-store matters now.
+2. Display opportunities: the store map and the four screen placements (endcap, checkout, shelf-edge, entrance), with where each sits, what it's best for, its reach, and what it can measure; plus when content plays (all day, by daypart, by frequency).
+3. Campaign designs: the four building blocks (placement, targeting, offer, rollout), six common campaign designs, and the three rollout patterns.
+4. Measurement plans: for each campaign design, how it's proven, what it's compared against, the data needed, what can be claimed and the retailer stage; the measurement toolkit; three places design adds leverage; how plans grow with the retailer.
+5. Build a test plan: start from a brand goal; shows how it will be proven, what it can't support, analyses it unlocks, and a simulated readout with incremental revenue and iROAS (editable assumptions). The four building blocks can be fine-tuned under "Advanced".
 The assistant (you) opens from the 'Ask the lab' button in the bottom-right corner of every page.
-Appendix: Store map & signals (placements, transaction-data targeting signals, offers, rollout patterns), Design guardrails, Holdout method (DiD worked example), Waves & dose method (fixed effects, pre-trend check, dose curve)."""
+Appendix: Brand Q&A (six brand objections with answers and proof points), Retailer roadmap (three stages in detail), Shopper signals (transaction-data targeting signals), Design guardrails, Holdout method (DiD worked example), Waves & dose method (fixed effects, pre-trend check, dose curve)."""
 
 _PUBLIC_FACTS = """What In-Store Connect does today (from Quad's public materials and partner announcements):
 - Network: launched in 2024 with The Save Mart Companies (15 stores, plans for 179 more) and Homeland (15 stores); 25 Smart & Final stores in California launch in fall 2026.
@@ -109,7 +110,7 @@ def knowledge_base() -> str:
     basket = {item["key"]: item for item in _simulate(PRESETS["Basket builder · shelf-edge cross-sell bundle"])["decomposition"]}
     daypart = {row["daypart"]: row for row in _simulate(PRESETS["Daypart activation · checkout dose test"])["daypart"]["breakdown"]}
     hp, red = holdout["primary"], holdout["redemption"]
-    objections = f"""Brand objections and the lab's answers (page "Answer the brand's questions"):
+    objections = f"""Brand objections and the lab's answers (page "Appendix · Brand Q&A"):
 - "How do we know shoppers wouldn't have bought anyway?" Compare against holdout stores in the same weeks. Simulated: a holdout read lands at {hp['estimate'] / hp['truth']:.0%} of the true lift; a before/after read of a network-wide launch reports {blanket['estimate'] / blanket['truth']:.0%}.
 - "Redemptions look great. Isn't that our ROI?" Redemptions prove delivery; pair them with a holdout for incrementality. Simulated: redemption-attributed sales run {red['attributed'] / red['truth']:.1f}x the incremental lift.
 - "Holding back stores costs us revenue." Roll out in waves; not-yet-launched stores are the comparison for a few weeks. Simulated: a three-wave rollout recovers {waves['estimate'] / waves['truth']:.0%} of the true lift.
@@ -121,11 +122,11 @@ def knowledge_base() -> str:
         _INSTRUCTIONS, _PAGES, _PUBLIC_FACTS,
         f"The four design dimensions (240 combinations):\n{dimensions}",
         _GLOSSARY,
-        f"The six brand goals on 'Design the test':\n{goals}",
+        f"The six campaign designs (brand goals) on 'Campaign designs' and 'Build a test plan':\n{goals}",
         f"Builder presets:\n{presets}",
         f"Design guardrails:\n" + "\n".join(guardrails),
         objections,
-        f"Retailer stages ('Scale with the retailer'):\n{stages}",
+        f"Retailer stages ('Appendix · Retailer roadmap'):\n{stages}",
     ])
 
 
@@ -133,7 +134,7 @@ def context_note(page: str, design: Design) -> dict:
     """Where the user is right now. Sent as a mid-conversation system message after their question,
     so the cached system prompt and earlier history stay unchanged (append-only)."""
     rec = recommend(design)
-    return {"role": "system", "content": f"The user is on the page '{page}'. The design currently loaded in 'Design the test': "
+    return {"role": "system", "content": f"The user is on the page '{page}'. The design currently loaded in 'Build a test plan': "
                                          f"{design.describe()} Verdict: {rec.status}. How it's proven: {rec.plain}"}
 
 

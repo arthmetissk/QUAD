@@ -4,52 +4,49 @@ A measurement design lab for in-store retail media. It's an interactive portfoli
 
 ## What it demonstrates
 
-The main flow has four steps, written for a sales audience: why proof matters → design the test → answer the brand's questions → scale with the retailer. Supporting material sits in an appendix. Business language comes first, and statistical detail sits in "Method details" expanders.
+The main flow follows five simple steps: Quad at a glance → display opportunities → campaign designs → measurement plans → build a test plan. Supporting material sits in an appendix. Business language comes first, and statistical detail sits in "Method details" expanders.
 
 Every design is store-level. In-store screens reach everyone nearby, so the lab doesn't use shopper-level (loyalty-delivered) designs. Comparisons come from holdout stores, staggered waves or play-frequency levels.
 
-**1 · Why proof matters.** "Every rollout is a measurement opportunity." It summarizes what In-Store Connect does today, with sources. It shows three places design adds leverage (phased rollouts, redemption reporting, time-of-day activation), each with a live simulated illustration, then the design-to-claim flow and the four design dimensions.
+**1 · Quad at a glance.** What In-Store Connect offers today (network, model, formats, targeting, buying, measurement), with public sources. Also covers who it serves (retailers and CPG brands) and why in-store matters now (eMarketer figures cited by Quad).
 
-**2 · Design the test.** Starts from six brand goals: launch a new product, win share from a competitor, grow the basket, drive offer redemptions, reach shoppers at the right moment, and find the right play frequency. Each goal pre-fills a matched design. The readout covers:
+**2 · Display opportunities.** A store floor plan and the four screen placements (endcap, checkout, shelf-edge, entrance). Each shows where it sits, what it's best for, its reach and what it can measure, plus when content plays (all day, by daypart, by frequency).
 
-- how the design will be proven, in plain language;
-- what it can't support;
-- the analyses it unlocks;
-- the result in incremental revenue and iROAS, with editable assumptions (stores, weeks, item price, media spend).
+**3 · Campaign designs.** The four building blocks of a campaign, six common designs that start from a brand goal, and the three rollout patterns:
 
-The four dimensions can be fine-tuned under "Advanced":
-
-| Dimension | Options | What it changes about measurement |
+| Building block | Options | What it changes about measurement |
 |---|---|---|
 | Placement | Endcap · Checkout · Shelf-edge · Entrance | The exposure proxy. Only shelf-edge defines a neighboring product, so only shelf-edge enables a cannibalization check. |
 | Targeting | Blanket · Category-adjacent · Cross-sell · Conquesting · Daypart | Extra outcomes (complement, competitor) and data granularity (daypart needs time-of-day sales). |
 | Offer mechanic | Awareness · Coupon · Bundle · New-product trial | Direct vs. inferred outcomes. A new product has no baseline, which forces a cross-sectional design. |
 | Rollout | On/off · Staggered · Dose variation | Where the comparison comes from. |
 
-**3 · Answer the brand's questions.** Six common objections, each with a meeting-ready answer, the design to propose and a live proof point:
+**4 · Measurement plans.** One table matches each campaign design to:
 
-- "Wouldn't they have bought anyway?"
-- "Isn't redemption our ROI?"
-- "Holding back stores costs revenue."
-- "Can a regional grocer measure this?"
-- "Is it just moving sales from our other products?"
-- "Can we see when it works?"
+- how it's proven;
+- what it's compared against;
+- the data needed;
+- what can be claimed;
+- the retailer stage it requires.
 
-**4 · Scale with the retailer.** A measurement roadmap in three stages:
+The page also covers the measurement toolkit (holdout, staggered waves, frequency test, launch comparison), three places design adds leverage with live simulated illustrations, and how plans grow with the retailer.
 
-- **Early-stage:** like Homeland; new deployments such as Smart & Final start here.
-- **Established network:** like Save Mart's location- and time-of-day activation.
-- **Fully instrumented network:** aisle-level traffic and basket data unlock shelf-edge net-lift reads.
+**5 · Build a test plan.** Pick a brand goal and get a matched design. The readout covers:
 
-Partner references cite public announcements.
+- how the design will be proven, in plain language;
+- what it can't support;
+- the analyses it unlocks;
+- a simulated result in incremental revenue and iROAS, with editable assumptions.
 
-**Ask the lab (bottom-right corner of every page).** A chat panel powered by Claude (`claude-opus-5`, via the Anthropic Python SDK). It answers questions about the lab's pages, goals, objections, retailer stages and simulated results, and knows which page you're on and which design is loaded in the builder. It stays open, with the conversation kept, as you move between pages. It's grounded in a brief generated from the app's own data (`assistant.py`), streams its answers, caches the brief with prompt caching, and has server-side refusal fallbacks enabled.
+**Ask the lab (bottom-right corner of every page).** A chat panel powered by Claude (`claude-opus-5`, via the Anthropic Python SDK). It answers questions about Quad's offering, display opportunities, campaign designs, measurement plans and simulated results, and knows which page you're on and which design is loaded in the builder. It stays open, with the conversation kept, as you move between pages. It's grounded in a brief generated from the app's own data (`assistant.py`), streams its answers, caches the brief with prompt caching, and has server-side refusal fallbacks enabled.
 
 **Appendix.**
 
-- Store map and shopper signals: placements, transaction-data targeting signals, offers and rollout patterns.
-- Design guardrails: a network-wide launch with no comparison, and a new-product launch with no baseline.
-- Two worked methods with full statistical output:
+- **Brand Q&A:** six common brand objections, each with an answer, the design to propose and a live proof point.
+- **Retailer roadmap:** three stages in detail. Early-stage is like Homeland, and new deployments such as Smart & Final start there. Established is like Save Mart's location- and time-of-day activation. Instrumented is where aisle traffic and basket data unlock shelf-edge net-lift reads.
+- **Shopper signals:** transaction-data targeting signals.
+- **Design guardrails:** a network-wide launch with no comparison, and a new-product launch with no baseline.
+- **Two worked methods with full statistical output:**
   - holdout DiD with a Welch interval;
   - staggered waves plus dose, with fixed effects, a pre-trend check and a fitted dose curve.
 

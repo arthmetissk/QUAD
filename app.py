@@ -236,8 +236,9 @@ def bullet_panel(title: str, items: list[str], css: str = "") -> str:
 
 # ---------- Session state & navigation ----------
 
-PAGES = ["Why proof matters", "Design the test", "Answer the brand's questions", "Scale with the retailer",
-         "Appendix · Store map & signals", "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
+PAGES = ["Quad at a glance", "Display opportunities", "Campaign designs", "Measurement plans", "Build a test plan",
+         "Appendix · Brand Q&A", "Appendix · Retailer roadmap", "Appendix · Shopper signals",
+         "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
 
 
 # The chosen design lives in plain session keys. Builder widgets are keyed by a version number
@@ -252,7 +253,7 @@ def load_design(design: Design, preset: str = "Custom"):
 
 def open_in_builder(design: Design):
     load_design(design, next((name for name, preset in PRESETS.items() if preset == design), "Custom"))
-    st.session_state.page = "Design the test"
+    st.session_state.page = "Build a test plan"
 
 
 if "design" not in st.session_state:
@@ -684,25 +685,150 @@ def leverage_cards():
     ]
 
 
-def page_overview():
+PLACEMENT_GUIDE = [
+    # key, number, title, where, best for, reach / precision, what you can measure
+    ("endcap", 1, "Endcap display", "End of an aisle, where shoppers turn between aisles.", "Category promotions, seasonal and new products.",
+     "High reach, medium precision.", "Store-level lift against holdout stores; exposure comes from store traffic."),
+    ("checkout", 2, "Checkout screen", "At the register lanes.", "Impulse items, coupons, last-minute add-ons.",
+     "Near-universal reach among buyers.", "Store-level lift; exposure comes from lane transaction counts."),
+    ("shelf", 3, "Shelf-edge screen", "In the aisle, next to one product.", "Brand switching, cross-sell, conquesting.",
+     "Narrow reach, highest precision.", "Lift net of the neighboring product (cannibalization); needs aisle traffic data."),
+    ("entrance", 4, "Entrance screen", "Lobby or store entrance.", "Store-wide awareness and events.",
+     "Every shopper passes it, but far from the shelf.", "Small, diluted store-level effects, so tests need more stores or weeks."),
+]
+
+STAT_SOURCES = "https://www.quad.com/resources/marketing-guides/in-store-retail-media-networks-the-revolution-2-0"
+
+
+def lab_map(current: str):
+    """Four-step map of the lab, shown at the bottom of each main page."""
+    steps = [
+        ("2 · Display opportunities", "Where screens sit in the store, and what each placement is good for.", "Display opportunities"),
+        ("3 · Campaign designs", "The building blocks of a campaign, and six common designs.", "Campaign designs"),
+        ("4 · Measurement plans", "How each design is proven, what it's compared against, and what you can claim.", "Measurement plans"),
+        ("5 · Build a test plan", "Pick a brand goal and get a full plan with a simulated result in revenue terms.", "Build a test plan"),
+    ]
+    steps = [step for step in steps if step[2] != current]
+    card_grid([f"<div class='panel'><h4>{title}</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>{text}</p></div>" for title, text, _ in steps])
+    button_row([("Open", f"map_{current}_{target}", navigate, (target,)) for _, _, target in steps])
+
+
+def page_quad():
     st.markdown(
-        "<div class='hero'><div class='eyebrow'>IN-STORE RETAIL MEDIA · MEASUREMENT DESIGN</div><h1>Every rollout is a measurement opportunity.</h1>"
-        "<p>In-Store Connect already ties screens to point-of-sale outcomes, from SKU-level lift to coupon redemptions. This lab explores how four design choices, "
-        "placement, targeting, offer and rollout, decide which outcomes a campaign can prove, and how that proof grows as each retail partner's network matures.</p>"
-        "<p style='margin-top:.9rem;font-size:.9rem;color:#9fc3d4'>An independent exploration built around Quad's In-Store Connect. All campaign data in the lab is simulated.</p></div>",
+        "<div class='hero'><div class='eyebrow'>QUAD · IN-STORE CONNECT</div><h1>Quad's in-store retail media network, at a glance.</h1>"
+        "<p>In-Store Connect turns grocery stores into a media channel: digital screens at endcaps, at checkout, at the shelf edge and at the entrance, "
+        "sold to CPG brands and measured against point-of-sale sales.</p>"
+        "<p style='margin-top:.9rem;font-size:.9rem;color:#9fc3d4'>An independent exploration built from Quad's public materials. All campaign data in the lab is simulated.</p></div>",
         unsafe_allow_html=True,
     )
-
-    st.markdown("## What In-Store Connect does today")
-    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>From Quad's public materials and partner announcements. eMarketer projects in-store retail media spend growing from $370M in 2024 to $1.06B in 2028, as cited by Quad.</p>", unsafe_allow_html=True)
+    st.markdown("## What Quad offers today")
     cards = []
     for title, text, sources in IN_STORE_CONNECT_TODAY:
         links = " · ".join(f"<a href='{TODAY_SOURCES[key]}' target='_blank'>source</a>" if len(sources) == 1 else f"<a href='{TODAY_SOURCES[key]}' target='_blank'>{i + 1}</a>" for i, key in enumerate(sources))
         cards.append(f"<div class='panel'><h4>{title}</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0 0 .6rem'>{text}</p><p class='small-note bottom' style='margin:0'>Sources: {links}</p></div>")
     card_grid(cards, 3)
 
+    st.markdown("## Who it serves")
+    audience("A new revenue stream from store foot traffic, and first-party sales data that proves the results to brands.",
+             "Reach shoppers at the moment of decision, with lift measured in actual point-of-sale sales.")
+
+    st.markdown("## Why in-store, why now")
+    card_grid([
+        stat_html("In-store retail media spend", "$1.06B", "Projected for 2028, up from $370M in 2024"),
+        stat_html("Retail sales made in stores", "83.7%", "Most purchases still happen in physical stores"),
+        stat_html("Retail media dollars spent on digital", "99.3%", "In-store is under-invested relative to sales"),
+    ])
+    st.markdown(f"<p class='small-note'>Figures from eMarketer, as cited in <a href='{STAT_SOURCES}' target='_blank'>Quad's in-store retail media guide</a>.</p>", unsafe_allow_html=True)
+
+    st.markdown("## How this lab is organized")
+    lab_map("Quad at a glance")
+
+
+def page_displays():
+    header("STEP 2 · DISPLAY OPPORTUNITIES", "Where the screens sit, and what each is good for",
+           "Each placement reaches a different shopper moment. Where the screen sits also decides what can be measured.")
+    st.markdown(to_img(store_map(), "Store floor plan showing endcap, checkout, shelf-edge and entrance screen placements"), unsafe_allow_html=True)
+    cards = []
+    for key, number, title, where, best_for, reach, measure in PLACEMENT_GUIDE:
+        cards.append(
+            f"<div class='panel'><div style='display:flex;gap:.7rem;align-items:center;margin-bottom:.6rem'><div style='flex:none;width:28px;height:28px;border-radius:50%;background:{PLACEMENT_COLORS[key]};color:white;font-weight:700;display:flex;align-items:center;justify-content:center'>{number}</div>"
+            f"<b style='color:#172b42;font-size:1.05rem'>{title}</b></div>"
+            f"<p style='color:#40566b;font-size:.88rem;line-height:1.5;margin:0 0 .45rem'><b>Where:</b> {where}</p>"
+            f"<p style='color:#40566b;font-size:.88rem;line-height:1.5;margin:0 0 .45rem'><b>Best for:</b> {best_for}</p>"
+            f"<p style='color:#40566b;font-size:.88rem;line-height:1.5;margin:0 0 .45rem'><b>Reach:</b> {reach}</p>"
+            f"<p class='bottom' style='color:#087e8b;font-size:.88rem;line-height:1.5;margin:0'><b>What you can measure:</b> {measure}</p></div>"
+        )
+    card_grid(cards)
+    st.markdown("## When content plays")
+    html_table([
+        {"Timing": "All day, every store", "Use it for": "Awareness and simple promotions", "Data needed": "Store-week sales"},
+        {"Timing": "By daypart (morning, midday, evening)", "Use it for": "Matching the shopping mission, e.g. coffee in the morning, dinner items in the evening", "Data needed": "Timestamped transactions"},
+        {"Timing": "By play frequency (low, medium, high)", "Use it for": "Finding how much frequency is enough", "Data needed": "Screen play logs"},
+    ])
+    st.markdown("<p class='small-note'>Which products and hours to target comes from the retailer's transaction data. See <b>Appendix · Shopper signals</b> for basket affinity, hour-of-day and brand-switching examples.</p>", unsafe_allow_html=True)
+    st.markdown("## Next")
+    lab_map("Display opportunities")
+
+
+def page_designs():
+    header("STEP 3 · CAMPAIGN DESIGNS", "A campaign is four choices",
+           "Where it plays, what it says, what it offers, and how it rolls out. The rollout is what makes a campaign measurable.")
+    blocks = []
+    for dim, options in DIMENSIONS.items():
+        opts = "".join(f"<span class='opt'>{label.split(' /')[0]}</span>" for label in options.values())
+        blocks.append(f"<div class='tier-card'><div class='tier-number'>BUILDING BLOCK</div><h3>{DIMENSION_TITLES[dim]}</h3><div>{opts}</div><p>{DIMENSION_IMPLICATIONS[dim]}</p></div>")
+    card_grid(blocks)
+    st.markdown("## Six common campaign designs")
+    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>Each one starts from what the brand wants to achieve.</p>", unsafe_allow_html=True)
+    cards = [
+        f"<div class='panel'><h3 style='margin:.1rem 0 .45rem;font-size:1.15rem'>{goal}</h3>"
+        f"<p style='color:#40566b;font-size:.88rem;line-height:1.5;margin:0 0 .5rem'><b>Design:</b> {proposal}</p>"
+        f"<p class='bottom' style='color:#087e8b;font-size:.86rem;line-height:1.5;margin:0'><b>The brand can say:</b> {outcome}</p></div>"
+        for goal, proposal, outcome, _ in GOALS
+    ]
+    for start in (0, 3):
+        card_grid(cards[start:start + 3], 3)
+        button_row([("Build this test", f"design_goal_{index}", open_in_builder, (GOALS[index][3],)) for index in range(start, start + 3)])
+    st.markdown("## Three ways to roll out")
+    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>The rollout creates the comparison that proves the result.</p>", unsafe_allow_html=True)
+    st.markdown(to_img(rollout_patterns(), "Three rollout patterns: on/off, staggered and dose variation"), unsafe_allow_html=True)
+    st.markdown("## Next")
+    lab_map("Campaign designs")
+
+
+def comparison_group(design: Design) -> str:
+    base = {"onoff": "Holdout stores in the same weeks", "staggered": "Stores that haven't launched yet",
+            "dose": "Stores at lower play frequency" + ("" if design.targeting == "blanket" else ", plus holdout stores")}[design.rollout]
+    return base + (", adjusted for store size" if design.offer == "trial" else "")
+
+
+def page_measurement():
+    header("STEP 4 · MEASUREMENT PLANS", "Every campaign design comes with a plan to prove it",
+           "The plan is set before launch: what the campaign is compared against, which data is needed, and what can be claimed afterwards.")
+    rows = []
+    for goal, _, outcome, design in GOALS:
+        rec = recommend(design)
+        rows.append({
+            "Campaign design": goal,
+            "How it's proven": rec.plain,
+            "Compared against": comparison_group(design),
+            "Data needed": rec.grain + ("; " + "; ".join(rec.outcomes[1:3]) if len(rec.outcomes) > 1 else ""),
+            "What you can claim": outcome,
+            "Retailer stage": MATURITY[maturity_required(design)]["name"],
+        })
+    html_table(rows)
+    button_row([("Build one of these plans →", "measure_to_builder", navigate, ("Build a test plan",))])
+
+    st.markdown("## The measurement toolkit")
+    card_grid([
+        "<div class='panel'><h4>Holdout comparison</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>Campaign stores vs. similar stores without it, before and after launch. Seasonality hits both and cancels out. The default for most campaigns.</p></div>",
+        "<div class='panel'><h4>Staggered waves</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>Launch in waves; stores waiting for their launch are the comparison. Every store eventually gets the campaign.</p></div>",
+        "<div class='panel'><h4>Frequency test</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>Low, medium and high play frequency show how lift grows with frequency, and when extra plays stop paying off.</p></div>",
+        "<div class='panel'><h4>Launch comparison</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>A new product has no sales history, so stores with and without the campaign are compared in the same weeks, adjusted for store size.</p></div>",
+    ])
+
     st.markdown("## Three places design adds leverage")
-    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>Each one builds on something the network already does. The numbers come from the lab's simulation, where the true lift is known because it was injected.</p>", unsafe_allow_html=True)
+    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>Each builds on something In-Store Connect already does. Numbers come from the lab's simulation, where the true lift is known.</p>", unsafe_allow_html=True)
     leverage = leverage_cards()
     card_grid([
         f"<div class='panel'><div class='eyebrow' style='margin-bottom:.3rem'>{builds_on}</div><h3 style='margin:.1rem 0 .5rem;font-size:1.2rem'>{title}</h3>"
@@ -710,74 +836,28 @@ def page_overview():
         for title, builds_on, text, illustration, _ in leverage
     ])
     button_row([("Open this design →", f"leverage_{index}", open_in_builder, (card[4],)) for index, card in enumerate(leverage)])
-    audience("Measurement built into each rollout gives every campaign a result the retailer can take to the brand's next planning meeting.",
-             "Results arrive with the comparison behind them, so lift reads the same way across retailers and campaigns.")
 
-    st.markdown("## From design to a defensible claim")
-    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>The design determines the data, the data determines the comparison, and the comparison determines what can be claimed.</p>", unsafe_allow_html=True)
-    st.markdown(to_img(measurement_flow(), "Flow from design choices to data, comparison, read-out and claim"), unsafe_allow_html=True)
-
-    st.markdown("## Four design dimensions")
-    st.markdown("<p style='color:#65788c;margin-top:-.6rem'>A campaign is one choice from each. They combine freely: 240 combinations, each with its own measurement plan.</p>", unsafe_allow_html=True)
-    dimension_cards = []
-    for dim, options in DIMENSIONS.items():
-        opts = "".join(f"<span class='opt'>{label.split(' /')[0]}</span>" for label in options.values())
-        dimension_cards.append(f"<div class='tier-card'><div class='tier-number'>DIMENSION</div><h3>{DIMENSION_TITLES[dim]}</h3><div>{opts}</div><p>{DIMENSION_IMPLICATIONS[dim]}</p></div>")
-    card_grid(dimension_cards)
-    st.button("Appendix: store map, shopper signals and rollout patterns →", on_click=navigate, args=("Appendix · Store map & signals",))
-
-    st.markdown("## Where the demo goes next")
-    steps = [
-        ("2 · Design the test", "Start from the brand's goal. See how it will be proven, what it can't support yet, and the result in incremental revenue and iROAS.", "Design the test"),
-        ("3 · Answer the brand's questions", "Six questions brands ask about in-store lift, each with an answer, a design and a proof point.", "Answer the brand's questions"),
-        ("4 · Scale with the retailer", "How proof grows with a retailer's data, from a regional pilot to a fully instrumented network.", "Scale with the retailer"),
-    ]
-    card_grid([f"<div class='panel'><h4>{title}</h4><p style='color:#40566b;font-size:.9rem;line-height:1.55;margin:0'>{text}</p></div>" for title, text, _ in steps])
-    button_row([("Open", f"walk_{target}", navigate, (target,)) for _, _, target in steps])
-    st.markdown("<p class='small-note' style='margin-top:.8rem'>The appendix in the sidebar holds the store map and shopper signals, the design guardrails, and the holdout and waves & dose methods with full statistical output.</p>", unsafe_allow_html=True)
-    st.markdown("<div class='insight'><b>Design principle:</b> keep the experiment no more complex than the decision requires. A simple, well-executed holdout supports a strong claim; richer designs unlock richer claims as the partner's data grows.</div>", unsafe_allow_html=True)
+    st.markdown("## Plans grow with the retailer")
+    html_table([
+        {"Stage": MATURITY[0]["name"], "Data available": "Store × week sales, holdout stores", "Plans it supports": "Holdout and staggered tests, coupon tie-ins", "What you can claim": "Store-level incremental lift"},
+        {"Stage": MATURITY[1]["name"], "Data available": "Transaction timestamps, screen play logs", "Plans it supports": "Daypart, frequency, conquesting and launch tests", "What you can claim": "When lift happens and how it scales with frequency"},
+        {"Stage": MATURITY[2]["name"], "Data available": "Aisle traffic, basket-level sales", "Plans it supports": "Shelf-edge and cross-sell tests", "What you can claim": "Lift net of cannibalization and halo"},
+    ])
+    st.markdown("<div class='insight'><b>Two guardrails:</b> always keep a comparison group when the whole network launches, and give new-product launches a comparison in time. See <b>Appendix · Design guardrails</b> for what happens without them.</div>", unsafe_allow_html=True)
+    st.markdown("## Next")
+    lab_map("Measurement plans")
 
 
 def page_field_guide():
-    header("APPENDIX · PLAN THE ACTIVATION", "Placements and shopper signals", "What each design choice looks like on the store floor, which first-party transaction data informs it, and what it changes about measurement.")
-    audience("Your first-party transaction data picks the placements and targeting, and it's the same data that later proves the result.",
+    header("APPENDIX · SHOPPER SIGNALS", "How transaction data chooses the targeting",
+           "The retailer's own sales data shows which products, hours and competitors a campaign should target.")
+    audience("Your first-party transaction data picks the targeting, and it's the same data that later proves the result.",
              "Targeting grounded in how shoppers actually buy: co-purchases, hour-of-day shopping missions and brand switching.")
-
-    st.markdown("## Placement: where the screen sits sets the exposure proxy")
-    st.markdown(to_img(store_map(), "Store floor plan showing endcap, checkout, shelf-edge and entrance screen placements"), unsafe_allow_html=True)
-    card_grid([
-        f"<div class='panel'><div style='display:flex;gap:.7rem;align-items:center;margin-bottom:.45rem'><div style='flex:none;width:28px;height:28px;border-radius:50%;background:{PLACEMENT_COLORS[key]};color:white;font-weight:700;display:flex;align-items:center;justify-content:center'>{number}</div>"
-        f"<b style='color:#172b42;line-height:1.3'>{title}</b></div><div style='color:#65788c;font-size:.88rem;line-height:1.5'>{note}</div></div>"
-        for key, number, title, note in PLACEMENT_NOTES
-    ])
-
     render_targeting(signals_data())
-
-    st.markdown("## Offer mechanic: direct trace or inferred effect")
-    html_table(
-        [
-            {"Offer": "Pure awareness", "Outcome you observe": "Aggregate sales only", "Measurement consequence": "Effect inferred from store-level comparisons"},
-            {"Offer": "Digital coupon tie-in", "Outcome you observe": "Redemption events (trackable scans)", "Measurement consequence": "Direct outcome, but redemptions overstate lift. Still needs a control."},
-            {"Offer": "Bundle / multi-buy", "Outcome you observe": "Basket units per transaction", "Measurement consequence": "Aggregate or basket-level; no link to a person"},
-            {"Offer": "New product trial", "Outcome you observe": "First purchases, with no history", "Measurement consequence": "No pre-period → cross-sectional design instead of DiD"},
-        ],
-    )
-
-    st.markdown("## Rollout structure: where the comparison comes from")
-    st.markdown(to_img(rollout_patterns(), "Three rollout patterns: on/off, staggered and dose variation"), unsafe_allow_html=True)
-
-    st.markdown("<p style='color:#65788c;margin-top:1rem'>Two rollout structures are worked through end to end in the appendix, with full statistical output:</p>", unsafe_allow_html=True)
-    html_table(
-        [
-            {"Appendix method": "Holdout method", "Campaign design": "One fixed treatment; one holdout", "Measurement": "Before/after DiD + Welch interval", "Data requirements": "Store × week product sales", "Question answered": "Did the campaign move sales?"},
-            {"Appendix method": "Waves & dose method", "Campaign design": "Staggered launch + variable dose", "Measurement": "Store & week fixed effects; nonlinear dose response", "Data requirements": "Longitudinal store panel + play intensity", "Question answered": "When and at what dose does lift emerge?"},
-        ],
-    )
-    st.button("Next: design the test →", on_click=navigate, args=("Design the test",))
 
 
 def page_builder():
-    header("STEP 2 · DESIGN THE TEST", "Start from the brand's goal, leave with a proof plan", "Pick what the brand wants to achieve. The lab proposes a matched design, shows how it will be proven, and translates the simulated result into incremental revenue and iROAS.")
+    header("STEP 5 · BUILD A TEST PLAN", "Start from the brand's goal, leave with a proof plan", "Pick what the brand wants to achieve. The lab proposes a matched design, shows how it will be proven, and translates the simulated result into incremental revenue and iROAS.")
     audience("Know before launch which claims the network can support, and which data to collect to support more.",
              "Every lift number comes with the comparison behind it, so it holds up in your analytics team's review.")
     st.markdown("### Start from the brand's goal")
@@ -894,7 +974,7 @@ def objection_cards():
 
 
 def page_objections():
-    header("STEP 3 · ANSWER THE BRAND'S QUESTIONS", "Six questions brands ask about in-store lift", "Each answer is written the way it would be said in a meeting, paired with the design to propose and a proof point from the simulation.")
+    header("APPENDIX · BRAND Q&A", "Six questions brands ask about in-store lift", "Each answer is written the way it would be said in a meeting, paired with the design to propose and a proof point from the simulation.")
     audience("A ready answer backed by a design turns a measurement objection into a scoping conversation.",
              "Each answer comes with the comparison behind it, so the brand's analysts can check the logic.")
     cards = objection_cards()
@@ -965,7 +1045,7 @@ def floating_assistant(page: str):
 
 
 def page_maturity():
-    header("STEP 4 · SCALE WITH THE RETAILER", "A measurement roadmap, from pilot to fully instrumented network", "In-store networks deploy modularly, from a single-region pilot to a fully instrumented rollout with aisle-level traffic and basket data. The right proof plan is the most rigorous one the retailer's data can support today.")
+    header("APPENDIX · RETAILER ROADMAP", "A measurement roadmap, from pilot to fully instrumented network", "In-store networks deploy modularly, from a single-region pilot to a fully instrumented rollout with aisle-level traffic and basket data. The right proof plan is the most rigorous one the retailer's data can support today.")
     audience("Each campaign's measurement makes the case for the next data investment: timestamps, play logs, aisle traffic.",
              "Expect store-level lift from a new network and shelf-level net lift from a fully instrumented one.")
     stage_cards = []
@@ -1077,22 +1157,20 @@ def page_medium(data):
     st.markdown("<div class='insight'><b>Why this fits:</b> a single before/after comparison would discard the rollout timing and treat a low-frequency store like a high-frequency store. Store and week fixed effects use the panel structure; the dose-response curve tests whether more plays deliver more lift, with the expected diminishing returns.</div>", unsafe_allow_html=True)
 
 
-if page == "Why proof matters":
-    page_overview()
-elif page == "Appendix · Store map & signals":
-    page_field_guide()
-elif page == "Design the test":
-    page_builder()
-elif page == "Appendix · Design guardrails":
-    page_failures()
-elif page == "Answer the brand's questions":
-    page_objections()
-elif page == "Scale with the retailer":
-    page_maturity()
-elif page == "Appendix · Holdout method":
-    page_easy(demo_data())
-elif page == "Appendix · Waves & dose method":
-    page_medium(demo_data())
+PAGE_RENDERERS = {
+    "Quad at a glance": page_quad,
+    "Display opportunities": page_displays,
+    "Campaign designs": page_designs,
+    "Measurement plans": page_measurement,
+    "Build a test plan": page_builder,
+    "Appendix · Brand Q&A": page_objections,
+    "Appendix · Retailer roadmap": page_maturity,
+    "Appendix · Shopper signals": page_field_guide,
+    "Appendix · Design guardrails": page_failures,
+    "Appendix · Holdout method": lambda: page_easy(demo_data()),
+    "Appendix · Waves & dose method": lambda: page_medium(demo_data()),
+}
+PAGE_RENDERERS[page]()
 
 floating_assistant(page)
 
