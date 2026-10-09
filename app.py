@@ -117,6 +117,8 @@ st.markdown(
     .st-key-chat_panel [data-testid="stElementContainer"], .st-key-chat_panel [data-testid="stVerticalBlock"],
     .st-key-chat_panel [data-testid="stMarkdown"] { width:100% !important; max-width:100%; }
     .chat-title { font-family:'Manrope',sans-serif; font-weight:700; font-size:1.05rem; color:#172b42; }
+    .nav-heading { font-family:'Manrope',sans-serif; font-size:.68rem; font-weight:800; letter-spacing:.16em; text-transform:uppercase; color:#8ce2d0 !important; margin:1.1rem 0 .25rem; }
+    .nav-heading.appendix { border-top:1px solid rgba(255,255,255,.14); padding-top:1rem; margin-top:1.2rem; }
     .chips { display:flex; flex-wrap:wrap; gap:.5rem; margin:.4rem 0 1rem; }
     .chip { background:white; border:1px solid #bfe3dc; color:#0b5f69; border-radius:10px; padding:.45rem .7rem; font-size:.82rem; font-weight:600; }
     .chip span { display:block; font-weight:400; color:#6b8193; font-size:.74rem; }
@@ -236,9 +238,29 @@ def bullet_panel(title: str, items: list[str], css: str = "") -> str:
 
 # ---------- Session state & navigation ----------
 
-PAGES = ["Quad at a glance", "Display opportunities", "Campaign designs", "Measurement plans", "Build a test plan",
-         "Appendix · Brand Q&A", "Appendix · Retailer roadmap", "Appendix · Shopper signals",
-         "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
+MAIN_PAGES = ["Quad at a glance", "Display opportunities", "Campaign designs", "Measurement plans", "Build a test plan"]
+APPENDIX_PAGES = ["Appendix · Brand Q&A", "Appendix · Retailer roadmap", "Appendix · Shopper signals",
+                  "Appendix · Design guardrails", "Appendix · Holdout method", "Appendix · Waves & dose method"]
+PAGES = MAIN_PAGES + APPENDIX_PAGES
+
+
+# The sidebar has two radio groups (main steps, appendix). The current page lives in
+# st.session_state.page; each group shows it when it belongs there and shows no selection otherwise.
+def sync_nav():
+    st.session_state.nav_main = st.session_state.page if st.session_state.page in MAIN_PAGES else None
+    st.session_state.nav_appendix = st.session_state.page if st.session_state.page in APPENDIX_PAGES else None
+
+
+def choose_main():
+    if st.session_state.nav_main:
+        st.session_state.page = st.session_state.nav_main
+    sync_nav()
+
+
+def choose_appendix():
+    if st.session_state.nav_appendix:
+        st.session_state.page = st.session_state.nav_appendix
+    sync_nav()
 
 
 # The chosen design lives in plain session keys. Builder widgets are keyed by a version number
@@ -254,6 +276,7 @@ def load_design(design: Design, preset: str = "Custom"):
 def open_in_builder(design: Design):
     load_design(design, next((name for name, preset in PRESETS.items() if preset == design), "Custom"))
     st.session_state.page = "Build a test plan"
+    sync_nav()
 
 
 if "design" not in st.session_state:
@@ -263,7 +286,17 @@ if "design" not in st.session_state:
 with st.sidebar:
     st.markdown("<div style='font-family:Manrope;font-weight:800;font-size:1.08rem;color:white'>◉ PROOF AT THE SHELF</div>", unsafe_allow_html=True)
     st.markdown("<p style='font-size:.77rem;margin-top:.15rem'>A measurement design lab for in-store retail media</p>", unsafe_allow_html=True)
-    page = st.radio("Explore the framework", PAGES, key="page", label_visibility="collapsed")
+    if "page" not in st.session_state:
+        st.session_state.page = MAIN_PAGES[0]
+    if "nav_main" not in st.session_state or "nav_appendix" not in st.session_state:
+        sync_nav()
+    st.markdown("<div class='nav-heading'>The lab</div>", unsafe_allow_html=True)
+    st.radio("The lab", MAIN_PAGES, key="nav_main", on_change=choose_main, label_visibility="collapsed",
+             format_func=lambda name: f"{MAIN_PAGES.index(name) + 1} · {name}")
+    st.markdown("<div class='nav-heading appendix'>Appendix</div>", unsafe_allow_html=True)
+    st.radio("Appendix", APPENDIX_PAGES, key="nav_appendix", on_change=choose_appendix, label_visibility="collapsed",
+             format_func=lambda name: name.removeprefix("Appendix · "))
+    page = st.session_state.page
     # Streamlit keeps the scroll position across reruns, so a newly selected page would open
     # part-way down. Scroll the main pane back to the top whenever the page changes.
     if st.session_state.get("last_page") != page:
@@ -642,6 +675,7 @@ DIMENSION_IMPLICATIONS = {
 
 def navigate(target: str):
     st.session_state.page = target
+    sync_nav()
 
 
 TODAY_SOURCES = {
